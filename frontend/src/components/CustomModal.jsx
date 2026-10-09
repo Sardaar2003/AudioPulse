@@ -6,6 +6,7 @@ const CustomModal = ({
   title,
   message,
   type = 'info', // 'success' | 'error' | 'warning' | 'info' | 'confirm'
+  confirmVariant = 'primary', // 'primary' | 'danger'
   onClose,
   onConfirm,
   confirmText = 'Confirm',
@@ -20,8 +21,13 @@ const CustomModal = ({
       case 'error':
         return <AlertCircle size={32} style={{ color: 'var(--danger)' }} />;
       case 'warning':
-      case 'confirm':
         return <AlertTriangle size={32} style={{ color: 'var(--warning)' }} />;
+      case 'confirm':
+        return confirmVariant === 'danger' ? (
+          <AlertTriangle size={32} style={{ color: 'var(--danger)' }} />
+        ) : (
+          <CheckCircle2 size={32} style={{ color: 'var(--accent-primary)' }} />
+        );
       case 'info':
       default:
         return <Info size={32} style={{ color: 'var(--accent-primary)' }} />;
@@ -35,8 +41,9 @@ const CustomModal = ({
       case 'error':
         return 'var(--danger)';
       case 'warning':
-      case 'confirm':
         return 'var(--warning)';
+      case 'confirm':
+        return confirmVariant === 'danger' ? 'var(--danger)' : 'var(--text-primary)';
       default:
         return 'var(--text-primary)';
     }
@@ -104,7 +111,14 @@ const CustomModal = ({
                   onClose();
                 }}
                 className="btn-primary"
-                style={{ flex: 1, padding: '0.65rem 1rem', fontSize: '0.88rem', background: 'linear-gradient(135deg, var(--danger), #dc2626)' }}
+                style={{
+                  flex: 1,
+                  padding: '0.65rem 1rem',
+                  fontSize: '0.88rem',
+                  background: confirmVariant === 'danger'
+                    ? 'linear-gradient(135deg, var(--danger), #dc2626)'
+                    : 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+                }}
               >
                 {confirmText}
               </button>

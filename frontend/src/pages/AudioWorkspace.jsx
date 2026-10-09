@@ -39,6 +39,7 @@ const AudioWorkspace = () => {
     title: '',
     message: '',
     type: 'info',
+    confirmVariant: 'primary',
     onConfirm: null,
   });
 
@@ -48,16 +49,18 @@ const AudioWorkspace = () => {
       title,
       message,
       type,
+      confirmVariant: 'primary',
       onConfirm: null,
     });
   };
 
-  const showConfirm = (title, message, onConfirmCallback) => {
+  const showConfirm = (title, message, onConfirmCallback, confirmVariant = 'primary') => {
     setModalConfig({
       isOpen: true,
       title,
       message,
       type: 'confirm',
+      confirmVariant,
       onConfirm: onConfirmCallback,
     });
   };
@@ -152,7 +155,11 @@ const AudioWorkspace = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        fetchAudioList();
+        if (data.analysis) {
+          setAudioList((prev) => prev.map((f) => (f._id === id ? data.analysis : f)));
+        } else {
+          fetchAudioList();
+        }
         navigate(`/analysis/${id}`);
       } else {
         showAlert('error', 'Transcription Failed', data.message || 'Unable to process AI transcription.');
@@ -184,7 +191,8 @@ const AudioWorkspace = () => {
         } catch (err) {
           showAlert('error', 'Delete Error', 'An error occurred while deleting the audio file.');
         }
-      }
+      },
+      'danger'
     );
   };
 
@@ -197,9 +205,9 @@ const AudioWorkspace = () => {
 
     showConfirm(
       'Trigger Batch Transcription',
-      `Are you sure you want to transcribe all ${pending.length} pending audio files using OpenAI Whisper API?`,
+      `Are you sure you want to transcribe all ${pending.length} pending audio file(s) using OpenAI Whisper API?`,
       async () => {
-        setBatchProgress({ active: true, total: pending.length, completed: 0, currentName: pending[0].originalFilename });
+        setBatchProgress({ active: true, total: pending.length, completed: 0, currentName: pending[0].originalFilename || pending[0].title });
         let successCount = 0;
 
         for (let i = 0; i < pending.length; i++) {
@@ -217,20 +225,37 @@ const AudioWorkspace = () => {
               method: 'POST',
               headers: getAuthHeaders(),
             });
-            if (res.ok) {
+            const data = await res.json();
+            if (res.ok && data.analysis) {
               successCount++;
+              // Instantly update local React audioList state so this file turns into "Completed" with "View Proof & Transcript" button!
+              setAudioList((prev) =>
+                prev.map((f) => (f._id === item._id ? data.analysis : f))
+              );
+            } else {
+              setAudioList((prev) =>
+                prev.map((f) => (f._id === item._id ? { ...f, status: 'error' } : f))
+              );
             }
           } catch (err) {
             console.error(`Error transcribing file ${item._id}:`, err);
+            setAudioList((prev) =>
+              prev.map((f) => (f._id === item._id ? { ...f, status: 'error' } : f))
+            );
           } finally {
             setTranscribingMap((prev) => ({ ...prev, [item._id]: false }));
           }
         }
 
         setBatchProgress(null);
-        fetchAudioList();
-        showAlert('success', 'Batch Processing Complete', `Successfully batch transcribed ${successCount} of ${pending.length} audio file(s).`);
-      }
+        await fetchAudioList();
+        showAlert(
+          'success',
+          'Batch Processing Complete',
+          `Successfully batch transcribed ${successCount} of ${pending.length} audio file(s). You can now click "View Proof & Transcript" on any file!`
+        );
+      },
+      'primary'
     );
   };
 
