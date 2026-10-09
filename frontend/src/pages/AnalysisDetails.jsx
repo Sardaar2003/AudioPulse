@@ -17,6 +17,7 @@ const AnalysisDetails = () => {
   const [keywordGroups, setKeywordGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentTime, setCurrentTime] = useState(0);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const fetchAnalysisDetails = async () => {
@@ -204,6 +205,7 @@ const AnalysisDetails = () => {
         ref={audioPlayerRef}
         audioUrl={audioStreamUrl}
         title={analysis.title || analysis.originalFilename}
+        onTimeUpdate={(time) => setCurrentTime(time)}
       />
 
       {/* Proof Evidence & Keyword Timestamp Table */}
@@ -218,6 +220,7 @@ const AnalysisDetails = () => {
         words={analysis.words || []}
         matches={analysis.keywordMatches || analysis.matches || []}
         keywordGroups={keywordGroups}
+        currentTime={currentTime}
         onWordClick={handleJumpToTimestamp}
       />
 

@@ -2,9 +2,38 @@ import React from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-const ThemeToggle = () => {
+const ThemeToggle = ({ collapsed = false }) => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={toggleTheme}
+        title={`Switch to ${isDark ? 'Light' : 'Dark'} Theme`}
+        style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '50%',
+          border: '1px solid var(--glass-border)',
+          background: isDark
+            ? 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))'
+            : 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+          color: '#ffffff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          boxShadow: isDark ? '0 3px 12px var(--accent-glow)' : '0 3px 12px rgba(245, 158, 11, 0.4)',
+          transition: 'all 0.3s ease',
+          margin: '0 auto',
+        }}
+      >
+        {isDark ? <Moon size={16} /> : <Sun size={16} />}
+      </button>
+    );
+  }
 
   return (
     <div

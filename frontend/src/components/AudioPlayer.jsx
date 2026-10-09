@@ -15,6 +15,7 @@ const AudioPlayer = forwardRef(({ audioUrl, title, onTimeUpdate }, ref) => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
   // Expose seekTo function to parent components (Proof table & Transcript viewer)
   useImperativeHandle(ref, () => ({
@@ -22,12 +23,14 @@ const AudioPlayer = forwardRef(({ audioUrl, title, onTimeUpdate }, ref) => {
       if (audioRef.current) {
         audioRef.current.currentTime = seconds;
         setCurrentTime(seconds);
+        audioRef.current.playbackRate = playbackSpeed;
         audioRef.current.play();
         setIsPlaying(true);
       }
     },
     play: () => {
       if (audioRef.current) {
+        audioRef.current.playbackRate = playbackSpeed;
         audioRef.current.play();
         setIsPlaying(true);
       }
@@ -40,11 +43,19 @@ const AudioPlayer = forwardRef(({ audioUrl, title, onTimeUpdate }, ref) => {
     },
   }));
 
+  const handleSpeedChange = (speed) => {
+    setPlaybackSpeed(speed);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = speed;
+    }
+  };
+
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
     } else {
+      audioRef.current.playbackRate = playbackSpeed;
       audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
@@ -97,7 +108,10 @@ const AudioPlayer = forwardRef(({ audioUrl, title, onTimeUpdate }, ref) => {
           }
         }}
         onLoadedMetadata={() => {
-          if (audioRef.current) setDuration(audioRef.current.duration);
+          if (audioRef.current) {
+            setDuration(audioRef.current.duration);
+            audioRef.current.playbackRate = playbackSpeed;
+          }
         }}
         onEnded={() => setIsPlaying(false)}
       />
@@ -138,7 +152,7 @@ const AudioPlayer = forwardRef(({ audioUrl, title, onTimeUpdate }, ref) => {
         />
       </div>
 
-      {/* Control Buttons */}
+      {/* Control Buttons & Playback Speed */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button onClick={() => skipTime(-5)} className="btn-secondary" style={{ padding: '0.5rem' }} title="Rewind 5s">
@@ -156,6 +170,35 @@ const AudioPlayer = forwardRef(({ audioUrl, title, onTimeUpdate }, ref) => {
           <button onClick={() => skipTime(5)} className="btn-secondary" style={{ padding: '0.5rem' }} title="Forward 5s">
             <FastForward size={16} />
           </button>
+        </div>
+
+        {/* Playback Speed Selector Pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(0, 0, 0, 0.25)', padding: '3px 6px', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-muted)', marginLeft: '0.3rem', marginRight: '0.2rem', textTransform: 'uppercase' }}>
+            Speed:
+          </span>
+          {[0.5, 1, 1.25, 1.5, 1.75, 2].map((speed) => (
+            <button
+              key={speed}
+              type="button"
+              onClick={() => handleSpeedChange(speed)}
+              style={{
+                padding: '0.2rem 0.5rem',
+                borderRadius: '12px',
+                border: 'none',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                background: playbackSpeed === speed ? 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))' : 'transparent',
+                color: playbackSpeed === speed ? '#ffffff' : 'var(--text-secondary)',
+                boxShadow: playbackSpeed === speed ? '0 2px 8px var(--accent-glow)' : 'none',
+              }}
+              title={`Set playback speed to ${speed}x`}
+            >
+              {speed}x
+            </button>
+          ))}
         </div>
 
         {/* Volume Controls */}
