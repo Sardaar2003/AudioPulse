@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, LogOut, Shield, User as UserIcon, LayoutDashboard, Terminal, ChevronLeft } from 'lucide-react';
+import { Activity, LogOut, Shield, User as UserIcon, LayoutDashboard, Terminal, ChevronLeft, BarChart2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from './ThemeToggle';
 
@@ -108,6 +108,17 @@ const Sidebar = () => {
                 LIVE
               </span>
             )}
+          </Link>
+        )}
+
+        {user && (
+          <Link
+            to="/analytics"
+            className={`sidebar-nav-item ${isActive('/analytics') ? 'active' : ''}`}
+            title={isCollapsed ? 'Analytics & Pricing' : undefined}
+          >
+            <BarChart2 size={18} style={{ flexShrink: 0 }} />
+            {!isCollapsed && <span>Analytics & Pricing</span>}
           </Link>
         )}
 

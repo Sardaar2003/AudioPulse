@@ -15,6 +15,7 @@ import AnalysisDetails from './pages/AnalysisDetails';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import ApiLogs from './pages/ApiLogs';
+import AnalyticsPricing from './pages/AnalyticsPricing';
 
 import './styles/index.css';
 
@@ -69,6 +70,14 @@ function MainLayout() {
             element={
               <ProtectedRoute>
                 <ApiLogs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <AnalyticsPricing />
               </ProtectedRoute>
             }
           />
