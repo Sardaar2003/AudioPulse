@@ -81,6 +81,10 @@ const transcribeAudio = async (req, res) => {
     // 3. Extract keyword timestamp proof matches
     const { matches, reliabilityScore } = extractProofMatches(transcript, words, keywordGroups);
 
+    // OpenAI Whisper API Billing Rule: $0.006/min with 1-minute minimum billing per API call
+    const actualDurationSecs = (durationMs || analysis.durationMs || 0) / 1000;
+    const callCostUSD = Math.max(0.006, Math.ceil(Math.max(1, actualDurationSecs) / 60) * 0.006);
+
     // 4. Update analysis record in MongoDB
     analysis.transcript = transcript;
     analysis.segments = segments;
@@ -91,6 +95,8 @@ const transcribeAudio = async (req, res) => {
     analysis.isFallback = isFallback || false;
     analysis.transcriptionNotice = transcriptionNotice || null;
     analysis.status = 'completed';
+    analysis.transcriptionCount = (analysis.transcriptionCount || 0) + 1;
+    analysis.apiCostUSD = (analysis.apiCostUSD || 0) + callCostUSD;
     await analysis.save();
 
     return res.json({

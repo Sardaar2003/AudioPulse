@@ -63,12 +63,34 @@ const AnalyticsPricing = () => {
     return audioFiles;
   };
 
+  const [billingMode, setBillingMode] = useState('openai'); // 'openai' (real-world $0.006 min request billing) | 'prorata'
+
   const filteredFiles = getFilteredFiles();
   const transcribedFiles = filteredFiles.filter((f) => f.status === 'completed');
   const totalSeconds = filteredFiles.reduce((acc, f) => acc + (f.durationMs || 0) / 1000, 0);
 
-  // OpenAI Whisper API Rate: $0.006 per minute ($0.0001 per sec)
-  const totalCostUSD = (totalSeconds / 60) * 0.006;
+  // OpenAI Whisper API Billing Calculation helper
+  const getFileCost = (f) => {
+    if (billingMode === 'prorata') {
+      const secs = (f.durationMs || 0) / 1000;
+      return (secs / 60) * 0.006;
+    }
+
+    // Real-world OpenAI API Billing: $0.006/min with 1-minute minimum per API request
+    if (typeof f.apiCostUSD === 'number' && f.apiCostUSD > 0) {
+      return f.apiCostUSD;
+    }
+
+    const secs = (f.durationMs || 0) / 1000;
+    const attempts = f.transcriptionCount || (f.status === 'completed' ? 1 : 0);
+    if (attempts === 0 && secs === 0) return 0;
+
+    // Minimum $0.006 per call, rounded up to next minute
+    const singleCallCost = Math.max(0.006, Math.ceil(Math.max(1, secs) / 60) * 0.006);
+    return Math.max(1, attempts) * singleCallCost;
+  };
+
+  const totalCostUSD = filteredFiles.reduce((acc, f) => acc + getFileCost(f), 0);
   const totalMatches = transcribedFiles.reduce((acc, f) => acc + (f.matchesCount || f.keywordMatches?.length || 0), 0);
   const avgLatencyMs = 818; // Average Whisper API processing turnaround
 
@@ -91,7 +113,7 @@ const AnalyticsPricing = () => {
       });
 
       const daySecs = dayFiles.reduce((acc, f) => acc + (f.durationMs || 0) / 1000, 0);
-      const dayCost = (daySecs / 60) * 0.006;
+      const dayCost = dayFiles.reduce((acc, f) => acc + getFileCost(f), 0);
       const dayMatches = dayFiles.reduce((acc, f) => acc + (f.matchesCount || f.keywordMatches?.length || 0), 0);
       const dayLatency = dayFiles.length > 0 ? 818 + (daySecs > 60 ? 400 : 0) : 0;
 
@@ -114,7 +136,7 @@ const AnalyticsPricing = () => {
   const maxDayCost = Math.max(0.001, ...dailyBuckets.map((b) => b.costUSD));
 
   const formatCost = (cost) => {
-    if (cost === 0) return '$0.0000';
+    if (cost === 0) return '$0.00';
     if (cost < 0.01) return `$${cost.toFixed(4)}`;
     return `$${cost.toFixed(2)}`;
   };
@@ -334,6 +356,26 @@ const AnalyticsPricing = () => {
           </button>
         </div>
 
+        {/* OpenAI Billing Rule Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.25)', padding: '4px 8px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Calculation:</span>
+          <button
+            onClick={() => setBillingMode(billingMode === 'openai' ? 'prorata' : 'openai')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--accent-secondary)',
+              fontSize: '0.78rem',
+              fontWeight: '800',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
+            title="Click to toggle between OpenAI minimum request billing and raw audio pro-rata"
+          >
+            {billingMode === 'openai' ? 'OpenAI Request Minimum ($0.006/call)' : 'Raw Audio Pro-Rata ($0.0001/s)'}
+          </button>
+        </div>
+
         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
           Synced at: <strong>{lastSynced.toLocaleTimeString()}</strong>
         </div>
@@ -359,8 +401,8 @@ const AnalyticsPricing = () => {
           <div style={{ fontSize: '2rem', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
             {formatCost(totalCostUSD)}
           </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-            Rate: <strong>$0.006 / min</strong> ($0.0001/sec)
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            Rate: <strong>$0.006 / min</strong> (Min $0.006 per call)
           </div>
         </div>
 

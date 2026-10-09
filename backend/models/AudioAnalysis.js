@@ -93,6 +93,14 @@ const audioAnalysisSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    apiCostUSD: {
+      type: Number,
+      default: 0,
+    },
+    transcriptionCount: {
+      type: Number,
+      default: 0,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
