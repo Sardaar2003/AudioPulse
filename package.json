@@ -4,7 +4,7 @@
   "private": true,
   "description": "AudioPulse — AI Audio Analysis, Keyword Intelligence, Proof Verification & PDF Audit Reporting Suite",
   "scripts": {
-    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "install:all": "npm install --prefix backend --include=dev && npm install --prefix frontend --include=dev",
     "build:frontend": "npm run build --prefix frontend",
     "build": "npm run install:all && npm run build:frontend",
     "start": "node backend/server.js"
